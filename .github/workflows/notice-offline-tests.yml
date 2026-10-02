@@ -10,9 +10,15 @@ on:
     paths:
       - test_jaeuk.py
       - notice_helpers.py
+      - notice_inputs.py
+      - demo_notice.py
+      - demo_replay.py
+      - fixtures/**
+      - tools/**
       - tests/**
       - pytest.ini
       - requirements-dev.txt
+      - requirements-demo.txt
       - .github/workflows/notice-offline-tests.yml
 
 permissions:
@@ -29,11 +35,11 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: '3.11'
-      - name: Install test tools only
+      - name: Install local parser, UI and test dependencies
         run: python -m pip install -r requirements-dev.txt
       - name: Offline regressions without service environment
         run: env -i PATH="$PATH" PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q
       - name: Scoped lint
-        run: ruff check --select E4,E9,F,E722 test_jaeuk.py notice_helpers.py tests
+        run: ruff check --select E4,E9,F,E722 test_jaeuk.py notice_helpers.py notice_inputs.py demo_notice.py demo_replay.py tests tools
       - name: Compile without executing app
-        run: python -m compileall -q test_jaeuk.py notice_helpers.py tests
+        run: python -m compileall -q test_jaeuk.py notice_helpers.py notice_inputs.py demo_notice.py demo_replay.py tests tools

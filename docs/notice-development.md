@@ -53,12 +53,12 @@ The helper imports only Python's standard library, reads no environment configur
 python -m pip install -r requirements-dev.txt
 python -m pytest -q
 python -m unittest discover -s tests -v
-ruff check --select E4,E9,F,E722 test_jaeuk.py notice_helpers.py tests
-python -m compileall -q test_jaeuk.py notice_helpers.py tests
+ruff check --select E4,E9,F,E722 test_jaeuk.py notice_helpers.py notice_inputs.py demo_notice.py demo_replay.py tests tools
+python -m compileall -q test_jaeuk.py notice_helpers.py notice_inputs.py demo_notice.py demo_replay.py tests tools
 ```
 
 `pytest.ini` restricts discovery to `tests/`, so the app named `test_jaeuk.py` and the legacy `test_guide.py`/`test_pdf.py` entry points are not collected. The suite covers empty S3 listings, four language messages, partial saves, missing DB, raw/summary S3 failure ordering, JSON shapes, unknown fields, translation fallback, Unicode chunk boundaries, parameterized inserts, commit-once success, and rollback/cleanup failures.
 
-The `Notice offline checks` workflow repeats pytest, scoped lint, and compile on Python 3.11 for this improvement branch and relevant pull requests into `model_optimization`. It installs only the test tools, passes no service credentials, and runs tests with an empty environment except `PATH` and the pytest plugin flag. It does not deploy or run the Streamlit app.
+The `Notice offline checks` workflow repeats pytest, scoped lint, and compile on Python 3.11 for the reliability-improvement branch and relevant pull requests into `model_optimization`. It installs the local parser, Streamlit and test dependencies, passes no service credentials, and runs tests with an empty environment except `PATH` and the pytest plugin flag. Streamlit AppTest runs the separate synthetic component UI; CI does not deploy or execute the service-backed app.
 
-Live permissions, real Gemini/Bedrock responses, actual schema/vector adaptation, transaction behavior on a deployed server, Streamlit rendering, and end-to-end application operation remain unverified. No paid call, deployment, AWS resource change, real database access, or production data mutation was made.
+Live permissions, real Gemini/Bedrock responses, actual schema/vector adaptation, transaction behavior on a deployed server, service-backed Streamlit rendering, and end-to-end application operation remain unverified. The [separate synthetic demo](synthetic-demo.md) adds shared PDF parsing, injected services, local UI tests and actual browser captures; those results apply only to that demo. No paid call, deployment, AWS resource change, real database access, or production data mutation was made.

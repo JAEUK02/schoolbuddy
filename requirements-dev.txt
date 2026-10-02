@@ -1,3 +1,4 @@
-# Local offline tests and scoped lint. No service SDK is needed by these tests.
+# Local offline tests, Streamlit AppTest and scoped lint. No service SDK.
+-r requirements-demo.txt
 pytest==9.1.1
 ruff==0.16.10
