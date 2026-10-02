@@ -1,17 +1,24 @@
 # School Buddy: code and experiment map
 
-This map helps reviewers follow the public repository without assuming that similarly named files or branches are one deployable application. Snapshot reviewed: 2026-10-02. [Back to project overview](../README.md).
+This map helps reviewers follow the public repository without assuming that similarly named files or branches are one deployable application. Original hackathon snapshot and current reliability improvements reviewed: 2026-10-02. [Back to project overview](../README.md).
 
 ## A short review path
 
 1. Read the [project overview](../README.md) for the problem and overall flow.
-2. Inspect [`test_jaeuk.py`](https://github.com/JAEUK02/schoolbuddy/blob/ab3f202c9e1f62416e17991163bf95d8fd2b82e3/test_jaeuk.py) for the integrated experiment: upload → extraction → JSON dashboard → embeddings → document-context Q&A.
-3. Open [JAEUK02's addition commit](https://github.com/JAEUK02/schoolbuddy/commit/ab3f202c9e1f62416e17991163bf95d8fd2b82e3), then the [team variant](https://github.com/JAEUK02/schoolbuddy/blob/dec67805a2b6dc0978dec7397761b284f1d41f7c/schoolbuddy_ver2.py), to understand provenance.
-4. Compare the [`main` FAQ prototype](https://github.com/JAEUK02/schoolbuddy/blob/f6bb88dd4aa598f6e716c56c9531dd46b82d7f67/app.py) if you want to see the simpler prompt and streaming interaction.
+2. Inspect the [current `test_jaeuk.py`](https://github.com/JAEUK02/schoolbuddy/blob/model_optimization/test_jaeuk.py), [helper](https://github.com/JAEUK02/schoolbuddy/blob/model_optimization/notice_helpers.py), and [setup/limits guide](https://github.com/JAEUK02/schoolbuddy/blob/model_optimization/docs/notice-development.md) for the integrated workflow with reliability improvements.
+3. Inspect the [original hackathon snapshot](https://github.com/JAEUK02/schoolbuddy/blob/ab3f202c9e1f62416e17991163bf95d8fd2b82e3/test_jaeuk.py) for upload → extraction → JSON dashboard → embeddings → document-context Q&A before that follow-up patch.
+4. Open [JAEUK02's addition commit](https://github.com/JAEUK02/schoolbuddy/commit/ab3f202c9e1f62416e17991163bf95d8fd2b82e3), then the [team variant](https://github.com/JAEUK02/schoolbuddy/blob/dec67805a2b6dc0978dec7397761b284f1d41f7c/schoolbuddy_ver2.py), to understand provenance.
+5. Compare the [`main` FAQ prototype](https://github.com/JAEUK02/schoolbuddy/blob/f6bb88dd4aa598f6e716c56c9531dd46b82d7f67/app.py) if you want to see the simpler prompt and streaming interaction.
+
+## Current reliability improvement
+
+[PR #1](https://github.com/JAEUK02/schoolbuddy/pull/1) is merged into `model_optimization`. The [current app](https://github.com/JAEUK02/schoolbuddy/blob/model_optimization/test_jaeuk.py) uses an [import-safe helper](https://github.com/JAEUK02/schoolbuddy/blob/model_optimization/notice_helpers.py) for validated notice JSON, unchanged 1,000-character/800-stride chunking, and ingestion/DB cleanup. It distinguishes raw save, summary save, and committed indexing; missing DB no longer reports indexing complete, and all four languages have empty-state messages. The revoked embedded key fallback has been removed from this current entry point.
+
+The [offline tests](https://github.com/JAEUK02/schoolbuddy/tree/model_optimization/tests) passed **23 tests / 40 subtests** with network-blocked mocks, and push/PR CI passed. The exact merged tree was also tested locally. These checks do not establish live AWS/Gemini/DB integration or Streamlit end-to-end operation. No deployment was performed. See the [current setup and limits](https://github.com/JAEUK02/schoolbuddy/blob/model_optimization/docs/notice-development.md) for placeholders, dependency scope, partial-save behavior, and remaining limits.
 
 ## Locate the representative flow
 
-All line references below point to the public, fixed snapshot of `model_optimization` at `ab3f202c9e1f62416e17991163bf95d8fd2b82e3`.
+All line references below point to the original hackathon snapshot at `ab3f202c9e1f62416e17991163bf95d8fd2b82e3`. They preserve historical evidence and are not line numbers for the current refactored app/helper; use the current branch links above for that version.
 
 | Question | Source location | What to look for |
 | --- | --- | --- |
@@ -24,6 +31,8 @@ All line references below point to the public, fixed snapshot of `model_optimiza
 | How are external programs handled? | [Lines 80–114](https://github.com/JAEUK02/schoolbuddy/blob/ab3f202c9e1f62416e17991163bf95d8fd2b82e3/test_jaeuk.py#L80-L114) and [284–299](https://github.com/JAEUK02/schoolbuddy/blob/ab3f202c9e1f62416e17991163bf95d8fd2b82e3/test_jaeuk.py#L284-L299) | Cached Danuri listing fetch, link navigation, and optional interaction logging |
 
 ## File and version map
+
+This table describes the original fixed snapshots. Current reliability changes are linked separately above.
 
 | Branch and file | Purpose | Important distinction |
 | --- | --- | --- |
@@ -53,23 +62,23 @@ Use these histories together to distinguish the code added to this fork from the
 
 ## Reproduction boundaries
 
-`main/requirements.txt` belongs to the Nova Lite app. The integrated experiment imports additional libraries, needs independently configured S3 and PostgreSQL resources, and has no complete dependency lock or database migration set on its branch.
+`main/requirements.txt` belongs to the Nova Lite app. The integrated experiment imports additional libraries and needs independently configured S3 and PostgreSQL resources. The current branch has an [import-derived dependency list](https://github.com/JAEUK02/schoolbuddy/blob/model_optimization/requirements-notice.txt) and [setup guide](https://github.com/JAEUK02/schoolbuddy/blob/model_optimization/docs/notice-development.md), but no validated production dependency lock or complete database migration set.
 
 To inspect the integrated experiment, select the `model_optimization` branch or use a separate checkout. Its entry command is `streamlit run test_jaeuk.py` from that branch's root.
 
-The imports require Streamlit, boto3, psycopg2, requests, `google-generativeai`, `python-dotenv`, Beautiful Soup, `langchain-aws`, and pypdf with mutually compatible versions. `lambda/requirements.txt` supplies only part of that set. The branch does not include a complete deployment recipe or documents-table migration; `feat_be/setup_db.py` creates only `program_logs`.
+The imports require Streamlit, boto3, psycopg2, requests, `google-generativeai`, `python-dotenv`, Beautiful Soup, `langchain-aws`, and pypdf with mutually compatible versions. The original `lambda/requirements.txt` supplies only part of that set; current `requirements-notice.txt` lists this entry point's imports without claiming a tested live SDK combination. The branch does not include a complete deployment recipe or documents-table migration; `feat_be/setup_db.py` creates only `program_logs`.
 
 The representative file expects:
 
 | Resource | Expected use |
 | --- | --- |
-| Gemini credentials | `GENAI_API_KEY` from your own local environment; the historical fallback was revoked |
+| Gemini credentials | Required `GENAI_API_KEY` from your own local environment; the revoked fallback is removed from the current representative entry point |
 | AWS access | S3 and Titan embedding calls in `us-west-2` |
 | S3 | `BUCKET_NAME`, with `raw/` for uploaded files and `analysis/` for generated JSON |
 | PostgreSQL + pgvector | `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`; `documents` needs content, embedding, and metadata columns compatible with the code |
 | Interaction log table | `program_logs` with user language, title, link, and timestamp fields |
 
-A successful dashboard upload message does not prove that vector insertion succeeded: database connection failure returns `None`, and that ingestion path can be skipped. Empty-dashboard handling also references a missing `no_data` translation entry. These are prototype review points for a future code pass; this documentation map preserves the existing source and branch history.
+In the original `ab3f202` snapshot, a successful upload message could appear without vector insertion, and empty-dashboard handling referenced a missing `no_data` translation entry. Merged PR #1 fixes both in the current branch and adds failure-path/JSON tests. Historical source links remain fixed to document that progression; they do not describe the current version's error handling.
 
 Additional evaluation and implementation limits:
 

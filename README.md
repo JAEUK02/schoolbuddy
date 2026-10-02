@@ -16,7 +16,17 @@ The initial FAQ prototype uses a three-step explanation prompt: **what it means 
 
 This Hanyang AWS Bootcamp project is a public fork of the team's [xianiax02/schoolbuddy](https://github.com/xianiax02/schoolbuddy). My recorded contribution, [commit `ab3f202`](https://github.com/JAEUK02/schoolbuddy/commit/ab3f202c9e1f62416e17991163bf95d8fd2b82e3), adds the integrated `test_jaeuk.py` experiment to this fork.
 
+That commit records the original hackathon snapshot. The current `model_optimization` branch also includes the reliability improvements below; the fixed historical links in the code map remain available for contribution review.
+
 That file connects upload, analysis, dashboard, translation, retrieval, chat, and program-listing flows in one Streamlit entry point. Shared team variants and their contributor histories are linked in the [code map](docs/code-map.md#contribution-and-provenance).
+
+## Reliability improvements
+
+[Merged PR #1](https://github.com/JAEUK02/schoolbuddy/pull/1) adds four-language empty states, notice JSON validation and translation fallback, separate raw/summary/indexing results, and DB rollback/resource cleanup. The current entry point reports indexing success only after commit and removes the revoked embedded credential fallback.
+
+**[Current setup and limits](https://github.com/JAEUK02/schoolbuddy/blob/model_optimization/docs/notice-development.md) · [Offline regression tests](https://github.com/JAEUK02/schoolbuddy/tree/model_optimization/tests)**
+
+Verification: **23 offline tests and 40 subtests passed**, with network-blocked mocks; push and PR CI also passed. The merged implementation has not been deployed, and live end-to-end operation remains unverified. Model IDs, AWS region, S3 prefixes, chunk boundaries, and L2 top-10 retrieval are unchanged.
 
 ## Implementation flow
 
