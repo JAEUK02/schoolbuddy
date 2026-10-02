@@ -26,7 +26,7 @@ That file connects upload, analysis, dashboard, translation, retrieval, chat, an
 
 **[Current setup and limits](https://github.com/JAEUK02/schoolbuddy/blob/model_optimization/docs/notice-development.md) · [Offline regression tests](https://github.com/JAEUK02/schoolbuddy/tree/model_optimization/tests)**
 
-Verification: **23 offline tests and 40 subtests passed**, with network-blocked mocks; push and PR CI also passed. The merged implementation has not been deployed, and live end-to-end operation remains unverified. Model IDs, AWS region, S3 prefixes, chunk boundaries, and L2 top-10 retrieval are unchanged.
+Verification: **23 offline tests and 40 subtests passed**, with network-blocked mocks. The [successful PR CI run](https://github.com/JAEUK02/schoolbuddy/actions/runs/36954722132) tested the reliability change; the exact merged tree was also checked locally. The merged implementation has not been deployed, and live end-to-end operation remains unverified. Model IDs, AWS region, S3 prefixes, chunk boundaries, and L2 top-10 retrieval are unchanged.
 
 ## Implementation flow
 
@@ -58,6 +58,21 @@ flowchart TD
 | Integrated OCR + RAG experiment | [`test_jaeuk.py` on `model_optimization`](https://github.com/JAEUK02/schoolbuddy/blob/model_optimization/test_jaeuk.py) |
 | Initial FAQ and streaming prompt | [`app.py` on `main`](app.py) |
 | Six branches, team variants, and line-level implementation links | [Code and experiment map](docs/code-map.md) |
+
+## Offline review without service credentials
+
+Use a separate checkout of the representative branch to inspect and test the notice helpers before running a service-backed app:
+
+```bash
+git clone --branch model_optimization https://github.com/JAEUK02/schoolbuddy.git schoolbuddy-offline-review
+cd schoolbuddy-offline-review
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
+```
+
+These tests inject service mocks and block socket connections; they do not import the executable app or load `.env`. The [current setup/test guide](https://github.com/JAEUK02/schoolbuddy/blob/model_optimization/docs/notice-development.md#offline-regression-suite) explains discovery and the separate requirements for live execution.
 
 ## Local exploration
 
