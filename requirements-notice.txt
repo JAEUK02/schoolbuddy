@@ -1,0 +1,10 @@
+# Imports used by test_jaeuk.py. This is not a validated production lockfile.
+boto3
+psycopg2-binary
+requests
+streamlit
+google-generativeai
+python-dotenv
+beautifulsoup4
+langchain-aws
+pypdf

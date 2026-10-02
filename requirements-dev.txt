@@ -1,0 +1,3 @@
+# Local offline tests and scoped lint. No service SDK is needed by these tests.
+pytest==9.1.1
+ruff==0.16.10

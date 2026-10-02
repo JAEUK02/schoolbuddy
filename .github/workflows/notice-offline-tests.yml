@@ -1,0 +1,39 @@
+name: Notice offline checks
+
+on:
+  push:
+    branches:
+      - improve/notice-ingestion-reliability-20261002
+  pull_request:
+    branches:
+      - model_optimization
+    paths:
+      - test_jaeuk.py
+      - notice_helpers.py
+      - tests/**
+      - pytest.ini
+      - requirements-dev.txt
+      - .github/workflows/notice-offline-tests.yml
+
+permissions:
+  contents: read
+
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.11'
+      - name: Install test tools only
+        run: python -m pip install -r requirements-dev.txt
+      - name: Offline regressions without service environment
+        run: env -i PATH="$PATH" PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q
+      - name: Scoped lint
+        run: ruff check --select E4,E9,F,E722 test_jaeuk.py notice_helpers.py tests
+      - name: Compile without executing app
+        run: python -m compileall -q test_jaeuk.py notice_helpers.py tests

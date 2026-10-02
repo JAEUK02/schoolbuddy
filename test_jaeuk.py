@@ -1,25 +1,29 @@
 import os
 import io
-import time
 import json
 import boto3
 import psycopg2
 import requests
 import streamlit as st
 import google.generativeai as genai
-from datetime import datetime
-from pathlib import Path
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 
 # LangChain 및 AWS 연동
 from langchain_aws import BedrockEmbeddings
+from notice_helpers import (
+    database_cursor, ingest_notice, recent_analysis_objects,
+    translated_notice_or_original, validate_notice,
+)
 
 load_dotenv()
 
 # --- [1] 서비스 및 보안 설정 ---
-# API 키는 .env 파일의 GENAI_API_KEY를 우선 사용하며, 없을 경우 아래 값을 사용합니다.
-GENAI_API_KEY = os.getenv("GENAI_API_KEY") or "AIzaSyAqk5nrtgRKvTpNK4GHDQ1xsUnbdwZeKSw"
+# API 키는 환경 변수에서만 읽습니다.
+GENAI_API_KEY = os.getenv("GENAI_API_KEY")
+if not GENAI_API_KEY:
+    st.error("GENAI_API_KEY 환경 변수를 설정한 뒤 앱을 실행하세요.")
+    st.stop()
 genai.configure(api_key=GENAI_API_KEY)
 MODEL_NAME = 'models/gemini-2.5-flash'
 
@@ -42,7 +46,8 @@ def get_db_conn():
             user=os.getenv('DB_USER'), password=os.getenv('DB_PASSWORD'),
             port='5432', connect_timeout=3
         )
-    except: return None
+    except Exception:
+        return None
 
 bedrock, s3 = init_aws()
 
@@ -52,13 +57,9 @@ bedrock, s3 = init_aws()
 @st.cache_data(show_spinner=False, ttl=3600)
 def translate_content(raw_json_str, target_lang):
     """S3 원본 JSON을 읽어와 사용자가 선택한 언어로 즉석 번역 및 캐싱합니다."""
+    original = validate_notice(raw_json_str)
     if target_lang == "한국어 (Korean)":
-        return json.loads(raw_json_str)
-    
-    model = genai.GenerativeModel(
-        MODEL_NAME,
-        generation_config={"response_mime_type": "application/json"}
-    )
+        return original
     
     prompt = f"""
     You are a professional JSON translation engine. 
@@ -69,25 +70,48 @@ def translate_content(raw_json_str, target_lang):
     - Return valid JSON ONLY.
     
     JSON:
-    {raw_json_str}
+    {json.dumps(original, ensure_ascii=False)}
     """
     try:
+        model = genai.GenerativeModel(
+            MODEL_NAME,
+            generation_config={"response_mime_type": "application/json"}
+        )
         response = model.generate_content(prompt)
-        return json.loads(response.text)
-    except Exception as e:
-        return json.loads(raw_json_str)
+        return translated_notice_or_original(original, response.text)
+    except Exception:
+        return original
 
 def log_interaction(title, link):
     conn = get_db_conn()
     if conn:
         try:
-            cur = conn.cursor()
-            cur.execute(
-                "INSERT INTO program_logs (user_lang, program_title, program_link) VALUES (%s, %s, %s)",
-                (st.session_state.language, title, link)
-            )
-            conn.commit(); cur.close(); conn.close()
-        except: pass
+            with database_cursor(conn, commit=True) as cur:
+                cur.execute(
+                    "INSERT INTO program_logs (user_lang, program_title, program_link) VALUES (%s, %s, %s)",
+                    (st.session_state.language, title, link)
+                )
+        except Exception:
+            pass
+
+
+def extract_notice_text(file_bytes, file_name):
+    file_ext = file_name.rsplit('.', 1)[-1].lower()
+    if file_ext in ['jpg', 'jpeg', 'png']:
+        model = genai.GenerativeModel(MODEL_NAME)
+        image_part = {"mime_type": f"image/{file_ext.replace('jpg', 'jpeg')}", "data": file_bytes}
+        prompt = "이 이미지에 포함된 모든 텍스트를 한국어로 정확히 읽어서 텍스트만 출력해줘."
+        return model.generate_content([prompt, image_part]).text
+    import pypdf
+    reader = pypdf.PdfReader(io.BytesIO(file_bytes))
+    return "".join(page.extract_text() or "" for page in reader.pages)
+
+
+def analyze_notice_text(text):
+    model = genai.GenerativeModel(MODEL_NAME)
+    prompt = f"Analyze notice. Respond in JSON ONLY. Fields: title, summary, details:{{date: 'YYYY-MM-DD'}}. Content: {text[:3000]}"
+    response = model.generate_content(prompt, generation_config={"response_mime_type": "application/json"})
+    return response.text
 
 @st.cache_data(ttl=3600)
 def fetch_external_programs():
@@ -111,7 +135,8 @@ def fetch_external_programs():
                 if len(date_items) >= 2: date = date_items[1].get_text(strip=True)
                 programs.append({"title": title, "link": link, "date": date})
         return programs
-    except: return []
+    except Exception:
+        return []
 
 # --- [3] UI/UX 설정 ---
 st.set_page_config(page_title="School Buddy", page_icon="🎒", layout="wide")
@@ -123,25 +148,29 @@ lang_pack = {
         "title": "🏠 학교 소식 대시보드", "monitor_h3": "AI 가정통신문 분석", "monitor_p": "최근 소식을 확인하세요.",
         "status": "작동중", "date": "날짜", "sidebar_upload": "새 공지 등록", "upload_label": "PDF/이미지 선택",
         "chat_placeholder": "학교 생활에 대해 물어보세요...", "btn_analyze": "🚀 분석 및 DB 저장",
-        "menu_program": "🌟 맞춤 프로그램 추천", "prog_desc": "다누리 지원센터의 최신 프로그램을 추천해 드립니다."
+        "menu_program": "🌟 맞춤 프로그램 추천", "prog_desc": "다누리 지원센터의 최신 프로그램을 추천해 드립니다.",
+        "no_data": "등록된 공지가 없습니다. 새 공지를 업로드해 주세요."
     },
     "English": {
         "title": "🏠 News Dashboard", "monitor_h3": "AI Document Analysis", "monitor_p": "Check recent updates.",
         "status": "Active", "date": "Date", "sidebar_upload": "Upload Notice", "upload_label": "Select PDF/Image",
         "chat_placeholder": "Ask about school life...", "btn_analyze": "🚀 Analyze & Save",
-        "menu_program": "🌟 Program Recommendations", "prog_desc": "Latest programs from Danuri Center."
+        "menu_program": "🌟 Program Recommendations", "prog_desc": "Latest programs from Danuri Center.",
+        "no_data": "No notices yet. Upload a notice to get started."
     },
     "Tiếng Việt": {
         "title": "🏠 Bảng tin nhà trường", "monitor_h3": "Phân tích AI", "monitor_p": "Kiểm tra cập nhật mới nhất.",
         "status": "Đang hoạt động", "date": "Ngày", "sidebar_upload": "Đăng ký thông báo", "upload_label": "Chọn PDF/Hình ảnh",
         "chat_placeholder": "Hỏi về cuộc sống học đường...", "btn_analyze": "🚀 Phân tích & Lưu",
-        "menu_program": "🌟 Đề xuất chương trình", "prog_desc": "Các chương trình mới nhất từ Trung tâm Danuri."
+        "menu_program": "🌟 Đề xuất chương trình", "prog_desc": "Các chương trình mới nhất từ Trung tâm Danuri.",
+        "no_data": "Chưa có thông báo. Hãy tải thông báo lên để bắt đầu."
     },
     "中文": {
         "title": "🏠 学校仪表판", "monitor_h3": "AI 通信 분석", "monitor_p": "查看最新更新。",
         "status": "运行中", "date": "日期", "sidebar_upload": "注册通知", "upload_label": "选择 PDF/图像",
         "chat_placeholder": "询问学校생활...", "btn_analyze": "🚀 분석 및 DB 저장",
-        "menu_program": "🌟 项目 추천", "prog_desc": "来自 Danuri 中심의 최신 프로젝트 추천."
+        "menu_program": "🌟 项目 추천", "prog_desc": "来自 Danuri 中심의 최신 프로젝트 추천.",
+        "no_data": "暂无通知。请上传通知以开始使用。"
     }
 }
 curr_lang = lang_pack.get(st.session_state.language, lang_pack["한국어 (Korean)"])
@@ -178,51 +207,27 @@ with st.sidebar:
     if st.button(curr_lang['btn_analyze'], use_container_width=True, type="primary"):
         if uploaded_file:
             with st.spinner("이미지/PDF 분석 및 지식 베이스 등록 중..."):
-                file_bytes = uploaded_file.getvalue()
-                file_name = uploaded_file.name
-                file_ext = file_name.split('.')[-1].lower()
-                s3.put_object(Bucket=os.getenv('BUCKET_NAME'), Key=f"raw/{file_name}", Body=file_bytes)
-                
-                try:
-                    model = genai.GenerativeModel(MODEL_NAME)
-                    extracted_text = ""
-
-                    # 1단계: 확장자별 텍스트 추출 (멀티모달 OCR 적용)
-                    if file_ext in ['jpg', 'jpeg', 'png']:
-                        image_part = {"mime_type": f"image/{file_ext.replace('jpg', 'jpeg')}", "data": file_bytes}
-                        ocr_prompt = "이 이미지에 포함된 모든 텍스트를 한국어로 정확히 읽어서 텍스트만 출력해줘."
-                        ocr_res = model.generate_content([ocr_prompt, image_part])
-                        extracted_text = ocr_res.text
-                    else:
-                        import pypdf
-                        pdf_reader = pypdf.PdfReader(io.BytesIO(file_bytes))
-                        extracted_text = "".join([p.extract_text() for p in pdf_reader.pages])
-
-                    # 2단계: 대시보드용 요약 생성 (S3 저장)
-                    if extracted_text.strip():
-                        analysis_prompt = f"Analyze notice. Respond in JSON ONLY. Fields: title, summary, details:{{date: 'YYYY-MM-DD'}}. Content: {extracted_text[:3000]}"
-                        res = model.generate_content(analysis_prompt, generation_config={"response_mime_type": "application/json"})
-                        s3.put_object(Bucket=os.getenv('BUCKET_NAME'), Key=f"analysis/{file_name}.json", Body=res.text)
-                        
-                        # 3단계: 채팅용 벡터 데이터 저장 (RAG 최적화)
-                        embeddings_model = get_embeddings_model()
-                        chunks = [extracted_text[i:i+1000] for i in range(0, len(extracted_text), 800)]
-                        conn = get_db_conn()
-                        if conn:
-                            cur = conn.cursor()
-                            for chunk in chunks:
-                                vector = embeddings_model.embed_query(chunk)
-                                cur.execute(
-                                    "INSERT INTO documents (content, embedding, metadata) VALUES (%s, %s, %s)",
-                                    (chunk, vector, json.dumps({"source": file_name, "type": file_ext}))
-                                )
-                            conn.commit()
-                            cur.close(); conn.close()
-                        st.success("✅ 분석 및 지식 베이스 등록 완료!")
-                        st.rerun()
-                    else:
-                        st.error("텍스트를 추출할 수 없습니다. 파일 상태를 확인하세요.")
-                except Exception as e: st.error(f"분석 오류: {e}")
+                result = ingest_notice(
+                    s3=s3, bucket=os.getenv('BUCKET_NAME'),
+                    file_bytes=uploaded_file.getvalue(), file_name=uploaded_file.name,
+                    extract_text=extract_notice_text, analyze_text=analyze_notice_text,
+                    connect=get_db_conn, embeddings_factory=get_embeddings_model,
+                )
+                if result.raw_saved:
+                    st.info("원본 파일 S3 저장 완료.")
+                if result.summary_saved:
+                    st.info("분석 요약 S3 저장 완료.")
+                if result.indexed:
+                    st.success("✅ 분석 및 지식 베이스 등록 완료!")
+                    st.rerun()
+                elif result.summary_saved:
+                    st.warning("요약은 저장됐지만 지식 베이스 등록은 완료되지 않았습니다. DB 연결과 설정을 확인하세요.")
+                elif result.error_code == "no_text":
+                    st.error("텍스트를 추출할 수 없습니다. 파일 상태를 확인하세요.")
+                elif result.error_code == "invalid_notice":
+                    st.error("분석 결과가 유효한 공지 JSON이 아닙니다. 요약과 지식 베이스는 저장하지 않았습니다.")
+                else:
+                    st.error("공지 처리 중 오류가 발생했습니다. 저장된 원본은 자동 삭제하지 않습니다.")
 
 # --- [5] 메인 화면 로직 ---
 
@@ -233,9 +238,8 @@ if st.session_state.current_page == 'dashboard':
     
     try:
         response = s3.list_objects_v2(Bucket=os.getenv('BUCKET_NAME'), Prefix='analysis/')
-        if 'Contents' in response:
-            json_files = [obj for obj in response['Contents'] if obj['Key'].endswith('.json')]
-            sorted_files = sorted(json_files, key=lambda x: x['LastModified'], reverse=True)
+        sorted_files = recent_analysis_objects(response)
+        if sorted_files:
             
             for obj in sorted_files[:3]:
                 file_obj = s3.get_object(Bucket=os.getenv('BUCKET_NAME'), Key=obj['Key'])
@@ -248,7 +252,7 @@ if st.session_state.current_page == 'dashboard':
                 <div class="notice-card">
                     <h4>📄 {data.get('title')}</h4>
                     <p>{data.get('summary')}</p>
-                    <div style="font-size:0.85rem; color:#86868B;">📅 {curr_lang['date']}: <b>{data.get('details', {}).get('date')}</b></div>
+                    <div style="font-size:0.85rem; color:#86868B;">📅 {curr_lang['date']}: <b>{data['details'].get('date') or '—'}</b></div>
                 </div>
                 """, unsafe_allow_html=True)
         else: st.info(curr_lang["no_data"])
@@ -269,10 +273,9 @@ elif st.session_state.current_page == 'chat':
                 conn = get_db_conn()
                 context_text = ""
                 if conn:
-                    cur = conn.cursor()
-                    cur.execute("SELECT content FROM documents ORDER BY embedding <-> %s::vector LIMIT 10", (query_vector,))
-                    context_text = "\n\n".join([r[0] for r in cur.fetchall()])
-                    cur.close(); conn.close()
+                    with database_cursor(conn) as cur:
+                        cur.execute("SELECT content FROM documents ORDER BY embedding <-> %s::vector LIMIT 10", (query_vector,))
+                        context_text = "\n\n".join([r[0] for r in cur.fetchall()])
                 
                 model = genai.GenerativeModel(MODEL_NAME)
                 # 공지사항 원본 데이터를 바탕으로 한 답변 생성
