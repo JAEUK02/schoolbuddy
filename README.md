@@ -1,58 +1,65 @@
-# School Buddy - 교육부 학부모가이드 연동
+# School Buddy: integrated notice app
 
-## 개요
-School Buddy가 교육부 학부모가이드의 내용을 참고하여 답변하도록 업데이트되었습니다.
+**A team hackathon prototype for reading Korean school notices and asking follow-up questions.** This `model_optimization` branch contains the representative OCR + RAG app and its follow-up reliability improvements.
 
-## 주요 변경사항
+**Start with [`test_jaeuk.py`](test_jaeuk.py).** For the wider project and contribution history, see the [main-branch overview](https://github.com/JAEUK02/schoolbuddy/blob/main/README.md) and [code/branch map](https://github.com/JAEUK02/schoolbuddy/blob/main/docs/code-map.md).
 
-### 1. 교육 가이드 연동
-- `load_education_guide()`: 교육부 학부모가이드의 주요 내용을 구조화된 형태로 제공
-- `search_education_content()`: 사용자 질문에 맞는 관련 교육 내용 검색
+## Review and setup path
 
-### 2. 지원하는 주요 주제
-- **가정통신문**: 학교 안내문 관련 정보
-- **학부모 상담**: 상담 일정 및 절차 안내
-- **준비물**: 학용품 및 교과서 관련 정보
-- **급식**: 학교 급식 관련 안내
-- **방과후학교**: 특별 프로그램 정보
-- **학교폭력**: 예방 및 신고 절차
-- **다문화가정 지원**: 특별 지원 프로그램
+| Review goal | Where to look |
+| --- | --- |
+| Integrated upload, dashboard, translation, retrieval, and chat | [`test_jaeuk.py`](test_jaeuk.py) |
+| JSON validation, unchanged text windows, partial saves, and DB cleanup | [`notice_helpers.py`](notice_helpers.py) |
+| Existing-resource configuration, dependencies, launch command, and limits | [Setup and offline verification](docs/notice-development.md) |
+| Offline regression cases | [`tests/test_notice_helpers.py`](tests/test_notice_helpers.py) |
+| App dependencies and placeholder settings | [`requirements-notice.txt`](requirements-notice.txt) · [`.env.example`](.env.example) |
 
-### 3. 사용 방법
+The integrated entry command is `streamlit run test_jaeuk.py`, after following the setup guide. Running the app can invoke paid models and write to configured S3/DB resources. The offline tests below need no service credentials or service SDK imports.
+
+## Offline checks
+
+From this branch's root:
+
 ```bash
-# 애플리케이션 실행
-streamlit run schoolbuddy.py
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
 ```
 
-### 4. 예시 질문
-- "가정통신문이 뭐예요?"
-- "학부모 상담은 언제 하나요?"
-- "다문화가정 지원이 있나요?"
-- "학교폭력 신고는 어떻게 하나요?"
+[`pytest.ini`](pytest.ini) restricts collection to `tests/`; it does not collect the executable app or older root-level experiments named `test_*.py`. A standard-library alternative is `python -m unittest discover -s tests -v`. The [setup guide](docs/notice-development.md#offline-regression-suite) also lists scoped lint and compile commands.
 
-## 기술적 세부사항
+The reliability pass verified **23 offline tests / 40 subtests** using mocked S3, DB, embedding, and model boundaries with socket connections blocked. The [successful PR CI run](https://github.com/JAEUK02/schoolbuddy/actions/runs/36954722132) tested the reliability change; the exact merge commit was checked locally. Current CI triggers cover improvement-branch pushes and PRs into `model_optimization`. These results do not establish live service operation.
 
-### 파일 구조
-```
-schoolbuddy/
-├── schoolbuddy.py          # 메인 애플리케이션 (업데이트됨)
-├── schoolbuddy_ver2.py     # 버전 2 (기존)
-├── test_guide.py           # 가이드 연동 테스트
-├── 교육부 학부모가이드.pdf  # 참고 문서
-└── README.md              # 이 파일
-```
+## Implemented flow
 
-### 주요 함수
-- `load_education_guide()`: 교육 가이드 내용 로드 (캐시됨)
-- `search_education_content(query)`: 키워드 기반 내용 검색
-- 기존 `find_docs()` 함수와 통합되어 동작
+| Stage | Representative behavior |
+| --- | --- |
+| Read notices | Gemini 2.5 Flash reads JPEG/PNG images; `pypdf` extracts PDF text. |
+| Store and summarize | S3 keeps raw uploads under `raw/` and validated notice JSON under `analysis/`. |
+| Translate | Korean, English, Vietnamese, and Chinese choices; JSON translation with a 3,600-second cache and validated-original fallback. |
+| Retrieve and answer | Bedrock Titan v1 embeds 1,000-character windows at an 800-character stride; PostgreSQL/pgvector L2 search retrieves 10 chunks for Gemini document-context Q&A. |
 
-### 답변 우선순위
-1. 교육부 학부모가이드 내용 (최우선)
-2. 기존 학교 문서 (보조)
-3. 일반적인 AI 지식 (마지막)
+AWS clients use `us-west-2`. Existing S3 resources and a compatible PostgreSQL/pgvector schema must be configured separately; the source does not establish a deployed RDS/Lambda/IAM/VPC architecture.
 
-## 향후 개선 계획
-- PDF OCR 기능 추가로 실제 PDF 파일 내용 활용
-- 더 많은 교육 주제 추가
-- 다국어 지원 강화
+## Contribution and reliability history
+
+This is a public fork of the team's [xianiax02/schoolbuddy](https://github.com/xianiax02/schoolbuddy). [JAEUK02's addition commit `ab3f202`](https://github.com/JAEUK02/schoolbuddy/commit/ab3f202c9e1f62416e17991163bf95d8fd2b82e3) records the original integrated hackathon snapshot. Shared team variants and their histories are described in the main code map; that addition commit alone does not assign authorship of every shared feature.
+
+[Merged PR #1](https://github.com/JAEUK02/schoolbuddy/pull/1) adds four-language empty states, notice JSON validation, translation fallback, separate raw/summary/indexing progress, and rollback/resource cleanup. Indexing success requires a completed commit. The revoked embedded credential fallback was removed from the current `test_jaeuk.py`; its configuration example contains placeholders only.
+
+## Historical education-guide variants
+
+The older [`schoolbuddy.py`](schoolbuddy.py) and [`schoolbuddy_ver2.py`](schoolbuddy_ver2.py) are separate guide-context conversation variants. Their `load_education_guide()` and `search_education_content()` functions provide structured guide snippets and keyword lookup alongside document search. Illustrative topics include school notices, parent counselling, supplies, meals, after-school activities, school violence, and support for multicultural families.
+
+The old `streamlit run schoolbuddy.py` command belongs to that variant. [`test_guide.py`](test_guide.py) is a separate console experiment, not the current offline regression suite. The guide PDF named in the previous README, `교육부 학부모가이드.pdf`, is not bundled under that filename on this branch. The representative app reads uploaded notices rather than requiring that guide file.
+
+The earlier PDF-OCR roadmap should be read in this variant context. The integrated app already implements image OCR and PDF text extraction; scanned-PDF OCR remains a limit, and no calendar/notification feature is asserted here.
+
+## Status and limits
+
+- This remains an educational team prototype. The reliability patch was not deployed; live AWS/Gemini/DB integration, the Streamlit interface, and full end-to-end operation remain unverified.
+- Scanned PDFs have no OCR fallback. Some UI strings remain untranslated despite four language choices.
+- Q&A receives retrieved context but does not enforce citations or refusal without relevant context. Accuracy, latency, user impact, and production readiness are separate evaluation tasks.
+
+See [setup and limits](docs/notice-development.md) before attempting service-backed execution.
