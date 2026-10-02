@@ -2,7 +2,7 @@
   "label": "SYNTHETIC COMPONENT REPLAY - SERVICES MOCKED",
   "fixture_sha256": "32dbf28520eff4d3b9e24d8058e86719c14330757a77adc5fcda8ff60268ebf8",
   "scenario": "success",
-  "real_components": [
+  "available_real_components": [
     "pypdf text extraction",
     "notice validation",
     "chunk_text",

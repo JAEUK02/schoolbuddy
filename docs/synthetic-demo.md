@@ -67,7 +67,7 @@ The supplied one-page [synthetic PDF](../fixtures/synthetic-notice.pdf) contains
 | Invalid response | [Screenshot](demo-evidence/invalid_json.png) · [replay JSON](demo-evidence/invalid_json.json) |
 | Capture details | [Browser/version/state record](demo-evidence/browser.json) · [evidence manifest](demo-evidence/manifest.json) |
 
-JSON outputs are deterministic for the provided bytes and fixtures, include the PDF SHA-256, state flags, source text, stored keys and mocked trace, and can be regenerated with the CLI. Screenshots are actual local browser captures, not generated mockups; pixels can differ by browser, font and operating system.
+JSON outputs are deterministic for the provided bytes and fixtures, include the PDF SHA-256, state flags, source text, stored keys and mocked trace, and can be regenerated with the CLI. `available_real_components` lists shared implementations available to the demo, not a claim that every component ran in every scenario. Early failures stop subsequent stages; inspect `trace` and `result` for the observed path. Screenshots are actual local browser captures, not generated mockups; pixels can differ by browser, font and operating system.
 
 ## Validate and rebuild evidence
 
@@ -78,9 +78,9 @@ ruff check --select E4,E9,F,E722 test_jaeuk.py notice_helpers.py notice_inputs.p
 python -m compileall -q test_jaeuk.py notice_helpers.py notice_inputs.py demo_notice.py demo_replay.py tests tools
 ```
 
-[`test_demo_replay.py`](../tests/test_demo_replay.py) blocks socket connections and covers actual PDF extraction, app PDF/image routing, all injected failure stages, deterministic evidence, four fixture-language cards and empty/success/reset/error states through Streamlit AppTest. The earlier helper regression suite remains included. Tests do not import the service-backed app.
+[`test_demo_replay.py`](../tests/test_demo_replay.py) patches `socket.create_connection`, `socket.socket.connect` and `socket.socket.connect_ex` and covers actual PDF extraction, app PDF/image routing, all injected failure stages, deterministic evidence, four fixture-language cards and empty/success/reset/error states through Streamlit AppTest. A mocked WebSocket-route regression verifies that non-local attempts are recorded and closed while local routes continue. The earlier helper regression suite remains included. Tests do not import the service-backed app. These Python TCP patches are not an OS-wide egress sandbox.
 
-Local validation on Python 3.14.4 passed **32 tests / 60 subtests**, scoped lint and compilation. `python -m unittest discover -s tests -q` also passed all 32 tests. Actual Chrome 153 capture checked empty, success, missing-DB, invalid-response and reset states with no JavaScript errors. The PDF was rendered and inspected separately before use. These observations cover only the listed synthetic/offline boundaries.
+Local validation on Python 3.14.4 passed **33 tests / 63 subtests**, scoped lint and compilation. `python -m unittest discover -s tests -q` also passed all 33 tests. Actual Chrome 153 capture checked empty, success, missing-DB, invalid-response and reset states with no JavaScript errors. The PDF was rendered and inspected separately before use. These observations cover only the listed synthetic/offline boundaries.
 
 Optional fixture/browser tools:
 
@@ -92,7 +92,7 @@ python demo_replay.py --scenario missing_db --output docs/demo-evidence/missing_
 python demo_replay.py --scenario invalid_json --output docs/demo-evidence/invalid_json.json
 ```
 
-With the local demo already running, `python tools/capture_demo.py` uses Playwright Chromium (install it with `python -m playwright install chromium` if needed). For an existing Mac Chrome installation, pass `--browser-executable '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'`. Capture creates a fresh browser context, blocks non-local page HTTP/WebSocket requests, asserts the mocked-service banner and each state, and checks for JavaScript errors. No authenticated user browser profile is used.
+With the local demo already running, `python tools/capture_demo.py` uses Playwright Chromium (install it with `python -m playwright install chromium` if needed). For an existing Mac Chrome installation, pass `--browser-executable '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'`. Capture creates a fresh browser context, records and blocks non-local requests handled by its HTTP and WebSocket routes, asserts the mocked-service banner and each state, and checks for JavaScript errors. `blocked_external_requests` audits those routed attempts only; it is not a browser/OS-wide network audit or egress sandbox. No authenticated user browser profile is used.
 
 ## Limits and next validation
 

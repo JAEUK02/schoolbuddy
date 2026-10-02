@@ -44,20 +44,20 @@
       "bytes": 139414
     },
     "docs/demo-evidence/browser.json": {
-      "sha256": "c92e673160cfd0defb42cec3039ec4151d29e681d0a9eaf79bdfb37d52c2420a",
-      "bytes": 406
+      "sha256": "2bc9ce466855d489d9e9f5e666d740ddbbfec174a06d96c3d44c377c87bd4ff3",
+      "bytes": 527
     },
     "docs/demo-evidence/invalid_json.json": {
-      "sha256": "0de4470ecbbe4c3f1afe7d8e76a7660b80a9e1925db87ca42482d52b7943b080",
-      "bytes": 2668
+      "sha256": "ff9fb42596839c15cac71eb5be9778acf1f340c6ff8f8299e562b2c34e7757a4",
+      "bytes": 2678
     },
     "docs/demo-evidence/missing_db.json": {
-      "sha256": "b03cb8bf6a5689e0b2cf09f9c81cb81462a978f71db22a2c09f477642f899a5c",
-      "bytes": 3218
+      "sha256": "79845cca7a9c1bcc38a4813856a97996314b08b4146f6346e644b53114470d4e",
+      "bytes": 3228
     },
     "docs/demo-evidence/success.json": {
-      "sha256": "fad496741f0c40b54aa838931e49429a654281b7bd851390ff17bf603368f3b4",
-      "bytes": 5816
+      "sha256": "0d46c9347148a4619f724b7a9419538652c7705cb632a1ffefedb1c2d9787e70",
+      "bytes": 5826
     },
     "notice_helpers.py": {
       "sha256": "e2feaf725a8eec196f161b52d0133f0385cb41228a8fdcc3410ea621b915652e",
@@ -68,8 +68,8 @@
       "bytes": 348
     },
     "demo_replay.py": {
-      "sha256": "f36c54f2405d00c0f12faf17d2aafc279e02910963ce37682a151370542d5ad5",
-      "bytes": 6454
+      "sha256": "9605a42f1d1fee7f51820272695c3a38259e9c6fe8e0a1764670de884518e6aa",
+      "bytes": 6474
     },
     "demo_notice.py": {
       "sha256": "f303c525508486bc9fd7c4ed9ef1157785eadab679dd4870c5b8661716f7c0dd",
@@ -80,12 +80,12 @@
       "bytes": 2687
     },
     "tools/capture_demo.py": {
-      "sha256": "e7f00751d656aba6b9bcd511b52799b2ad7ea689c4b54a58dfabd165b652b47b",
-      "bytes": 4580
+      "sha256": "5871841bf2d8fc17d4be78e8933d2ab19ec22d82ee3a293151281036438dec8c",
+      "bytes": 4897
     },
     "tests/test_demo_replay.py": {
-      "sha256": "55e79f1ebc01cd0fcbf0ec0db21e690aebb75789baf021a73e8e14ae03954f90",
-      "bytes": 8465
+      "sha256": "087cfdfa242c284aa286dd120dd126aac9fd03531b3d85e8f65a116114005522",
+      "bytes": 9595
     }
   },
   "boundary": "No live models, S3, database, pgvector retrieval, student records or deployment"

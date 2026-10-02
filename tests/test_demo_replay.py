@@ -1,4 +1,4 @@
-"""Run the real parser/helpers against synthetic bytes with network blocked."""
+"""Synthetic replay tests with selected Python TCP connection calls patched."""
 
 import ast
 import hashlib
@@ -9,12 +9,13 @@ from unittest.mock import Mock, patch
 from demo_replay import PDF_PATH, ROOT, SCENARIOS, fixture_responses, run_demo
 from notice_helpers import chunk_text, translated_notice_or_original
 from notice_inputs import extract_pdf_text
+from tools.capture_demo import route_websocket
 
 
 class OfflineDemoTest(unittest.TestCase):
     def setUp(self):
         for target in ("socket.create_connection", "socket.socket.connect", "socket.socket.connect_ex"):
-            guard = patch(target, side_effect=AssertionError("Network forbidden in component tests"))
+            guard = patch(target, side_effect=AssertionError("Python TCP connection forbidden in component tests"))
             guard.start()
             self.addCleanup(guard.stop)
 
@@ -22,6 +23,8 @@ class OfflineDemoTest(unittest.TestCase):
 class ReplayTests(OfflineDemoTest):
     def test_real_pdf_is_read_and_original_window_contents_are_inserted(self):
         snapshot = run_demo()
+        self.assertIn("available_real_components", snapshot)
+        self.assertNotIn("real_components", snapshot)
         text = snapshot["extracted_text"]
         self.assertIn("SYNTHETIC SCHOOL NOTICE", text)
         self.assertIn("2026-10-08", text)
@@ -50,6 +53,8 @@ class ReplayTests(OfflineDemoTest):
         for scenario, (raw, summary, stage, code) in cases.items():
             with self.subTest(scenario=scenario):
                 snapshot = run_demo(scenario)
+                self.assertIn("available_real_components", snapshot)
+                self.assertNotIn("real_components", snapshot)
                 result = snapshot["result"]
                 self.assertEqual(result, dict(raw_saved=raw, summary_saved=summary, indexed=False,
                                  indexed_chunks=0, failed_stage=stage, error_code=code))
@@ -77,6 +82,22 @@ class ReplayTests(OfflineDemoTest):
     def test_unknown_scenario_is_rejected(self):
         with self.assertRaises(ValueError):
             run_demo("unrecognized")
+
+    def test_websocket_routing_records_blocked_attempts_and_allows_local(self):
+        for url, local in (("ws://127.0.0.1:8512/stream", True),
+                           ("ws://localhost:8512/stream", True),
+                           ("wss://example.invalid/synthetic-audit", False)):
+            with self.subTest(url=url):
+                route, blocked = Mock(url=url), []
+                route_websocket(route, blocked)
+                if local:
+                    route.connect_to_server.assert_called_once_with()
+                    route.close.assert_not_called()
+                    self.assertEqual(blocked, [])
+                else:
+                    route.connect_to_server.assert_not_called()
+                    route.close.assert_called_once_with()
+                    self.assertEqual(blocked, [url])
 
     def test_all_handwritten_languages_retain_the_analysis_shape(self):
         fixtures = fixture_responses()

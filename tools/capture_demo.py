@@ -1,18 +1,26 @@
-"""Capture real local browser states; block HTTP requests to non-local hosts."""
+"""Capture local browser states; audit routed HTTP/WebSocket requests only."""
 
 import argparse
 import json
 from pathlib import Path
 from urllib.parse import urlparse
 
-from playwright.sync_api import expect, sync_playwright
-
-
 ROOT = Path(__file__).resolve().parents[1]
 BANNER = "SYNTHETIC INPUT · FIXTURE MODEL RESPONSES · S3 / EMBEDDINGS / DATABASE MOCKED"
 
 
+def route_websocket(route, blocked):
+    """Audit and close non-local attempts handled by the Playwright route."""
+    if urlparse(route.url).hostname in ("127.0.0.1", "localhost"):
+        route.connect_to_server()
+    else:
+        blocked.append(route.url)
+        route.close()
+
+
 def capture(url, executable=None):
+    from playwright.sync_api import expect, sync_playwright
+
     if urlparse(url).hostname not in ("127.0.0.1", "localhost"):
         raise ValueError("Capture only a local synthetic demo")
     output = ROOT / "docs" / "demo-evidence"
@@ -34,8 +42,7 @@ def capture(url, executable=None):
                 route.abort()
 
         context.route("**/*", route_request)
-        context.route_web_socket("**/*", lambda route: route.connect_to_server()
-                                if urlparse(route.url).hostname in ("127.0.0.1", "localhost") else route.close())
+        context.route_web_socket("**/*", lambda route: route_websocket(route, blocked))
         page = context.new_page()
         page.on("pageerror", lambda error: errors.append(str(error)))
 
@@ -74,6 +81,7 @@ def capture(url, executable=None):
         evidence = {"browser": browser.version, "viewport": {"width": 1440, "height": 1200},
                     "states": ["empty", "success", "missing_db", "invalid_json", "reset"],
                     "javascript_errors": errors, "blocked_external_requests": blocked,
+                    "request_audit_scope": "Playwright-routed browser-context HTTP/WebSocket requests only; not OS-wide egress isolation",
                     "mode": "actual local browser; fixture responses and services mocked",
                     "screenshot_view": "inspection panel collapsed; complete trace in replay JSON"}
         (output / "browser.json").write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")

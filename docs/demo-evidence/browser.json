@@ -13,6 +13,7 @@
   ],
   "javascript_errors": [],
   "blocked_external_requests": [],
+  "request_audit_scope": "Playwright-routed browser-context HTTP/WebSocket requests only; not OS-wide egress isolation",
   "mode": "actual local browser; fixture responses and services mocked",
   "screenshot_view": "inspection panel collapsed; complete trace in replay JSON"
 }
