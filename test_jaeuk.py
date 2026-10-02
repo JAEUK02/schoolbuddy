@@ -1,5 +1,4 @@
 import os
-import io
 import json
 import boto3
 import psycopg2
@@ -15,6 +14,7 @@ from notice_helpers import (
     database_cursor, ingest_notice, recent_analysis_objects,
     translated_notice_or_original, validate_notice,
 )
+from notice_inputs import extract_pdf_text
 
 load_dotenv()
 
@@ -102,9 +102,7 @@ def extract_notice_text(file_bytes, file_name):
         image_part = {"mime_type": f"image/{file_ext.replace('jpg', 'jpeg')}", "data": file_bytes}
         prompt = "이 이미지에 포함된 모든 텍스트를 한국어로 정확히 읽어서 텍스트만 출력해줘."
         return model.generate_content([prompt, image_part]).text
-    import pypdf
-    reader = pypdf.PdfReader(io.BytesIO(file_bytes))
-    return "".join(page.extract_text() or "" for page in reader.pages)
+    return extract_pdf_text(file_bytes)
 
 
 def analyze_notice_text(text):

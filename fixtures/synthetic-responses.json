@@ -1,0 +1,35 @@
+{
+  "label": "Handwritten synthetic model responses; not live inference or evaluated translations",
+  "analysis": {
+    "title": "Synthetic notice: after-school reading club",
+    "summary": "The fictional reading club meets on 2026-10-08 at 15:00 in Demo Room A. Bring a notebook.",
+    "details": {"date": "2026-10-08", "time": "15:00", "place": "Demo Room A", "action": "Bring a notebook"},
+    "fixture_id": "synthetic-reading-club-v1"
+  },
+  "translations": {
+    "English": {
+      "title": "Synthetic notice: after-school reading club",
+      "summary": "The fictional reading club meets on 2026-10-08 at 15:00 in Demo Room A. Bring a notebook.",
+      "details": {"date": "2026-10-08", "time": "15:00", "place": "Demo Room A", "action": "Bring a notebook"},
+      "fixture_id": "synthetic-reading-club-v1"
+    },
+    "한국어 (Korean)": {
+      "title": "합성 안내문: 방과후 독서 모임",
+      "summary": "가상의 독서 모임은 2026-10-08 15:00에 데모 교실 A에서 열립니다. 공책을 준비해 주세요.",
+      "details": {"date": "2026-10-08", "time": "15:00", "place": "데모 교실 A", "action": "공책 준비"},
+      "fixture_id": "synthetic-reading-club-v1"
+    },
+    "Tiếng Việt": {
+      "title": "Thông báo giả lập: câu lạc bộ đọc sách sau giờ học",
+      "summary": "Câu lạc bộ giả lập gặp lúc 15:00 ngày 2026-10-08 tại phòng Demo A. Hãy mang theo một quyển vở.",
+      "details": {"date": "2026-10-08", "time": "15:00", "place": "Phòng Demo A", "action": "Mang theo một quyển vở"},
+      "fixture_id": "synthetic-reading-club-v1"
+    },
+    "中文": {
+      "title": "合成通知：课后读书会",
+      "summary": "虚构的读书会于2026-10-08 15:00在演示教室A举行。请带一本笔记本。",
+      "details": {"date": "2026-10-08", "time": "15:00", "place": "演示教室A", "action": "带一本笔记本"},
+      "fixture_id": "synthetic-reading-club-v1"
+    }
+  }
+}

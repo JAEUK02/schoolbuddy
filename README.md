@@ -9,12 +9,15 @@
 | Review goal | Where to look |
 | --- | --- |
 | Integrated upload, dashboard, translation, retrieval, and chat | [`test_jaeuk.py`](test_jaeuk.py) |
+| Run a credential-free synthetic component demo with real parsing/helpers and mocked services | [Demo instructions, boundaries and browser evidence](docs/synthetic-demo.md) · [`demo_notice.py`](demo_notice.py) |
 | JSON validation, unchanged text windows, partial saves, and DB cleanup | [`notice_helpers.py`](notice_helpers.py) |
 | Existing-resource configuration, dependencies, launch command, and limits | [Setup and offline verification](docs/notice-development.md) |
-| Offline regression cases | [`tests/test_notice_helpers.py`](tests/test_notice_helpers.py) |
+| Offline regression cases and synthetic UI states | [`tests/test_notice_helpers.py`](tests/test_notice_helpers.py) · [`tests/test_demo_replay.py`](tests/test_demo_replay.py) |
 | App dependencies and placeholder settings | [`requirements-notice.txt`](requirements-notice.txt) · [`.env.example`](.env.example) |
 
 The integrated entry command is `streamlit run test_jaeuk.py`, after following the setup guide. Running the app can invoke paid models and write to configured S3/DB resources. The offline tests below need no service credentials or service SDK imports.
+
+For a local review, install `requirements-demo.txt` and run `python tools/run_demo.py`. The launcher applies this demo's light theme and binds only to localhost. It processes one fictional PDF using the shared parser/helpers; model responses, S3, vectors and DB calls are explicitly mocked. [Actual local screenshots and reproducible JSON](docs/synthetic-demo.md#reproducible-states) show success and partial failures. This separate UI does not validate the live app, model quality or pgvector retrieval.
 
 ## Offline checks
 
@@ -58,7 +61,7 @@ The earlier PDF-OCR roadmap should be read in this variant context. The integrat
 
 ## Status and limits
 
-- This remains an educational team prototype. The reliability patch was not deployed; live AWS/Gemini/DB integration, the Streamlit interface, and full end-to-end operation remain unverified.
+- This remains an educational team prototype. The reliability patch was not deployed; live AWS/Gemini/DB integration, the service-backed Streamlit interface, and full end-to-end operation remain unverified. The separate synthetic demo is documented above.
 - Scanned PDFs have no OCR fallback. Some UI strings remain untranslated despite four language choices.
 - Q&A receives retrieved context but does not enforce citations or refusal without relevant context. Accuracy, latency, user impact, and production readiness are separate evaluation tasks.
 

@@ -1,0 +1,3 @@
+# Credential-free local component UI and real text-PDF parsing.
+streamlit==1.64.0
+pypdf==6.19.0

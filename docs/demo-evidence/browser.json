@@ -1,0 +1,30 @@
+{
+  "browser": "153.0.8010.48",
+  "viewport": {
+    "width": 1440,
+    "height": 1200
+  },
+  "states": [
+    "empty",
+    "success",
+    "missing_db",
+    "invalid_json",
+    "reset"
+  ],
+  "javascript_errors": [],
+  "blocked_external_requests": [],
+  "request_audit_scope": "Playwright-routed browser-context HTTP/WebSocket requests only; not OS-wide egress isolation",
+  "preferred_color_scheme": "dark",
+  "observed_light_theme": {
+    "background": "rgb(255, 252, 247)",
+    "select_background": "rgb(237, 245, 250)",
+    "caption_color": "rgb(82, 108, 125)"
+  },
+  "mobile_viewport": {
+    "width": 390,
+    "height": 1600,
+    "horizontal_overflow": false
+  },
+  "mode": "actual local browser; fixture responses and services mocked",
+  "screenshot_view": "inspection panel collapsed; complete trace in replay JSON"
+}

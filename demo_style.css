@@ -1,0 +1,92 @@
+/* Local synthetic demo only. No imported fonts, scripts or remote assets. */
+[data-testid="stApp"] {
+  background: #fffcf7;
+  color: #243d4b;
+  color-scheme: light;
+}
+[data-testid="stHeader"] { background: #fffcf7; }
+[data-testid="stMainBlockContainer"] {
+  max-width: 1240px;
+  padding-top: 3.4rem;
+  padding-bottom: 2.5rem;
+}
+.buddy-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #236b96;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+}
+.buddy-book {
+  width: 42px;
+  height: 42px;
+  padding: 8px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  border-radius: 13px;
+  background: #e4f2fa;
+}
+.buddy-hero h1 {
+  margin: 18px 0 7px;
+  color: #243d4b;
+  font-size: clamp(2.1rem, 4vw, 3rem);
+  font-weight: 720;
+  letter-spacing: -0.045em;
+  line-height: 1.13;
+}
+.buddy-hero p {
+  margin: 0 0 16px;
+  color: #526c7d;
+  font-size: 1.1rem;
+}
+.st-key-demo_disclosure [data-testid="stAlert"] {
+  background: #eaf4fa;
+  color: #285c78;
+  border: 1px solid #d4e8f3;
+  border-radius: 14px;
+}
+.st-key-demo_controls, .st-key-demo_results {
+  background: #ffffff;
+  border: 1px solid #dce7ed !important;
+  border-radius: 20px !important;
+  padding: 24px !important;
+  box-shadow: 0 8px 30px rgba(31, 77, 104, 0.035);
+}
+.st-key-demo_controls h3, .st-key-demo_results h3 {
+  color: #243d4b;
+  font-size: 1.3rem;
+  letter-spacing: -0.02em;
+}
+[data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] p { color: #526c7d; }
+[data-testid="stMetric"] {
+  padding: 14px;
+  background: #f1f7fb;
+  border-radius: 13px;
+}
+[data-testid="stMetricLabel"] { color: #526c7d; }
+[data-testid="stMetricValue"] { color: #236b96; font-size: 1.8rem; }
+.st-key-demo_notice_card {
+  background: #f9fcfe;
+  border: 1px solid #deedf4 !important;
+  border-radius: 15px !important;
+  padding: 20px !important;
+}
+.st-key-demo_notice_card h3 { font-size: 1.15rem; }
+[data-testid="stBaseButton-primary"] {
+  background: #236b96;
+  color: white;
+  border-color: #236b96;
+  min-height: 44px;
+  font-weight: 600;
+}
+[data-testid="stBaseButton-primary"]:hover { background: #195979; border-color: #195979; }
+button:focus-visible { outline: 3px solid #68a9ce !important; outline-offset: 3px; }
+[data-testid="stExpander"] { border-color: #dce7ed; }
+[data-testid="stExpander"] summary { background: #f5f9fc; }
+@media (max-width: 640px) {
+  [data-testid="stMainBlockContainer"] { padding: 5rem 1rem 2rem; }
+  .st-key-demo_controls, .st-key-demo_results { padding: 18px !important; }
+}
