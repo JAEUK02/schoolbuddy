@@ -1,0 +1,10 @@
+# Applied only by tools/run_demo.py; no project/global Streamlit config change.
+[theme]
+base = "light"
+primaryColor = "#236B96"
+backgroundColor = "#FFFCF7"
+secondaryBackgroundColor = "#EDF5FA"
+textColor = "#243D4B"
+borderColor = "#D7E5ED"
+baseRadius = "0.75rem"
+font = "sans-serif"

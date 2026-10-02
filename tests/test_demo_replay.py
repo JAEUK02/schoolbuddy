@@ -135,8 +135,8 @@ class StreamlitDemoTests(OfflineDemoTest):
     def test_empty_success_and_reset_ui_states(self):
         app = self.app()
         self.assertFalse(app.exception)
-        self.assertIn("MOCKED", app.warning[0].value)
-        self.assertIn("No synthetic notice", app.info[0].value)
+        self.assertIn("MOCKED", app.info[0].value)
+        self.assertTrue(any("No synthetic notice" in item.value for item in app.info))
         app.button(key="demo_run").click().run()
         self.assertFalse(app.exception)
         self.assertEqual([metric.value for metric in app.metric], ["Yes", "Yes", "2"])
@@ -144,7 +144,7 @@ class StreamlitDemoTests(OfflineDemoTest):
         app.button(key="demo_reset").click().run()
         self.assertFalse(app.exception)
         self.assertFalse(app.metric)
-        self.assertIn("No synthetic notice", app.info[0].value)
+        self.assertTrue(any("No synthetic notice" in item.value for item in app.info))
 
     def test_missing_database_and_invalid_json_ui_states(self):
         app = self.app()
@@ -156,7 +156,7 @@ class StreamlitDemoTests(OfflineDemoTest):
                 self.assertFalse(app.exception)
                 self.assertEqual([metric.value for metric in app.metric], expected)
                 if scenario == "missing_db":
-                    self.assertIn("indexing is incomplete", app.warning[1].value)
+                    self.assertTrue(any("indexing is incomplete" in item.value for item in app.warning))
                 else:
                     self.assertIn("invalid_notice", app.error[0].value)
 

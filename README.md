@@ -17,7 +17,7 @@
 
 The integrated entry command is `streamlit run test_jaeuk.py`, after following the setup guide. Running the app can invoke paid models and write to configured S3/DB resources. The offline tests below need no service credentials or service SDK imports.
 
-For a local review, install `requirements-demo.txt` and run `streamlit run demo_notice.py --browser.gatherUsageStats false`. It processes one fictional PDF using the shared parser/helpers; model responses, S3, vectors and DB calls are explicitly mocked. [Actual local screenshots and reproducible JSON](docs/synthetic-demo.md#reproducible-states) show success and partial failures. This separate UI does not validate the live app, model quality or pgvector retrieval.
+For a local review, install `requirements-demo.txt` and run `python tools/run_demo.py`. The launcher applies this demo's light theme and binds only to localhost. It processes one fictional PDF using the shared parser/helpers; model responses, S3, vectors and DB calls are explicitly mocked. [Actual local screenshots and reproducible JSON](docs/synthetic-demo.md#reproducible-states) show success and partial failures. This separate UI does not validate the live app, model quality or pgvector retrieval.
 
 ## Offline checks
 

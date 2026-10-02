@@ -13,6 +13,8 @@ on:
       - notice_inputs.py
       - demo_notice.py
       - demo_replay.py
+      - demo_style.css
+      - demo_theme.toml
       - fixtures/**
       - tools/**
       - tests/**

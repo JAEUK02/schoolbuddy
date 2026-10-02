@@ -12,10 +12,12 @@ From the `model_optimization` code line containing this demo, use Python 3.11 or
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements-demo.txt
-python -m streamlit run demo_notice.py --server.address 127.0.0.1 --server.port 8512 --server.headless true --browser.gatherUsageStats false
+python tools/run_demo.py --port 8512
 ```
 
 Open `http://127.0.0.1:8512`. Process the supplied PDF, inspect state flags and the call trace, change the handwritten response language, and reset. Changing the scenario selector does not process anything until **Process synthetic PDF** is clicked. The result identifies its processed scenario.
+
+The launcher applies this demo's local `demo_theme.toml`: warm white background, soft sky-blue controls and readable notice cards. It binds only to loopback, disables usage telemetry and leaves global/project Streamlit configuration unchanged. The synthetic/mock disclosure stays above the controls, and full extraction/state data remains available in the expandable inspection panel. No remote fonts or images are added.
 
 No `.env` or service keys are needed. This entrypoint does not import `test_jaeuk.py`, `boto3`, `psycopg2`, Gemini or Bedrock clients. Objects and rows exist only within each replay's Python memory. There is no arbitrary file upload, external program feed or chat panel.
 
@@ -62,6 +64,7 @@ The supplied one-page [synthetic PDF](../fixtures/synthetic-notice.pdf) contains
 | Evidence | Artifact |
 | --- | --- |
 | Empty screen | [Actual local browser screenshot](demo-evidence/empty.png) |
+| Mobile empty screen | [390-pixel-wide local capture](demo-evidence/mobile_empty.png) |
 | Success | [Screenshot](demo-evidence/success.png) · [replay JSON](demo-evidence/success.json) |
 | DB unavailable | [Screenshot](demo-evidence/missing_db.png) · [replay JSON](demo-evidence/missing_db.json) |
 | Invalid response | [Screenshot](demo-evidence/invalid_json.png) · [replay JSON](demo-evidence/invalid_json.json) |
@@ -80,7 +83,7 @@ python -m compileall -q test_jaeuk.py notice_helpers.py notice_inputs.py demo_no
 
 [`test_demo_replay.py`](../tests/test_demo_replay.py) patches `socket.create_connection`, `socket.socket.connect` and `socket.socket.connect_ex` and covers actual PDF extraction, app PDF/image routing, all injected failure stages, deterministic evidence, four fixture-language cards and empty/success/reset/error states through Streamlit AppTest. A mocked WebSocket-route regression verifies that non-local attempts are recorded and closed while local routes continue. The earlier helper regression suite remains included. Tests do not import the service-backed app. These Python TCP patches are not an OS-wide egress sandbox.
 
-Local validation on Python 3.14.4 passed **33 tests / 63 subtests**, scoped lint and compilation. `python -m unittest discover -s tests -q` also passed all 33 tests. Actual Chrome 153 capture checked empty, success, missing-DB, invalid-response and reset states with no JavaScript errors. The PDF was rendered and inspected separately before use. These observations cover only the listed synthetic/offline boundaries.
+Local validation on Python 3.14.4 passed **33 tests / 63 subtests**, scoped lint and compilation. `python -m unittest discover -s tests -q` also passed all 33 tests. Actual Chrome 153 capture checked empty, success, missing-DB, invalid-response and reset states with no JavaScript errors. Capture emulated a dark system preference and asserted light app/control backgrounds; a 390-pixel-wide viewport had no horizontal overflow. The PDF was rendered and inspected separately before use. These observations cover only the listed synthetic/offline boundaries.
 
 Optional fixture/browser tools:
 
